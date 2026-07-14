@@ -70,11 +70,20 @@ function render(notes) {
   for (const note of notes) {
     const li = document.createElement("li");
     li.className = "lbn-item";
-    li.innerHTML = `
-      <div class="lbn-item-title">${slugToTitle(note.slug)}</div>
-      <div class="lbn-item-snippet">${(note.text || "").slice(0, 80).replace(/\n/g, " ")}</div>
-      <div class="lbn-item-date">${formatDate(note.updatedAt)}</div>
-    `;
+
+    const title = document.createElement("div");
+    title.className = "lbn-item-title";
+    title.textContent = slugToTitle(note.slug);
+
+    const snippet = document.createElement("div");
+    snippet.className = "lbn-item-snippet";
+    snippet.textContent = (note.text || "").slice(0, 80).replace(/\n/g, " ");
+
+    const date = document.createElement("div");
+    date.className = "lbn-item-date";
+    date.textContent = formatDate(note.updatedAt);
+
+    li.append(title, snippet, date);
     li.addEventListener("click", () => {
       browser.tabs.create({ url: slugToUrl(note.slug) });
     });
