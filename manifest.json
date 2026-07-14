@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "Letterboxd Private Notes",
+  "version": "1.0.0",
+  "description": "Add private private notes stored locally on Letterboxd film pages.",
+  "homepage_url": "https://github.com/",
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "{d1f07e9d-937b-4b2a-991d-05fe8bbd5c2d}",
+      "strict_min_version": "109.0"
+    }
+  },
+
+  "permissions": ["storage", "tabs", "cookies"],
+  "host_permissions": [
+    "*://letterboxd.com/*",
+    "*://*.letterboxd.com/*"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": [
+        "*://letterboxd.com/film/*",
+        "*://*.letterboxd.com/film/*",
+        "*://letterboxd.com/*/film/*",
+        "*://*.letterboxd.com/*/film/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+
+  "action": {
+    "default_title": "Letterboxd Private Notes",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "48": "icons/icon-48.png",
+      "96": "icons/icon-96.png"
+    }
+  },
+
+  "icons": {
+    "48": "icons/icon-48.png",
+    "96": "icons/icon-96.png",
+    "128": "icons/icon-128.png"
+  }
+}
