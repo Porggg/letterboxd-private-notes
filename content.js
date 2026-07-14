@@ -47,8 +47,12 @@
 
   /** Attempts to get the film title shown on the page for display in the panel */
   function getFilmTitle() {
-    const h1 = document.querySelector('h1.headline-1, [data-testid="film-title"], h1');
+    /** h1 is for the film page */
+    const h1 = document.querySelector('h1.headline-1.primaryname');
+    /** h2 is for the review page of a film */
+    const h2 = document.querySelector('h2.primaryname.prettify');
     if (h1) return h1.textContent.trim();
+    if (h2) return h2.textContent.trim();
     return document.title.replace(/\s*•\s*Letterboxd.*$/i, "").trim();
   }
 
