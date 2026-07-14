@@ -3,7 +3,7 @@
   "name": "Letterboxd Private Notes",
   "version": "1.0.0",
   "description": "Add private private notes stored locally on Letterboxd film pages.",
-  "homepage_url": "https://github.com/",
+  "homepage_url": "https://github.com/Porggg/letterboxd-private-notes",
 
   "browser_specific_settings": {
     "gecko": {
