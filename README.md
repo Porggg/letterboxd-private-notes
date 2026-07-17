@@ -32,7 +32,7 @@ Use this only if you want to inspect or modify the code. Notes will
 3. Click **"Load Temporary Add-on"**
 4. Select the `manifest.json` file
 
-Yoiu will have to do this each time you restart Firefox.
+You will have to do this each time you restart Firefox.
 
 ## Features
 - Floating Notes button on `/film/<slug>/` and `/<username>/film/<slug>/` pages
