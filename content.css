@@ -103,12 +103,109 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
+  min-height: 44px;
   background: #1c232b;
   border-top: 1px solid #2c3440;
 }
 #lbn-status {
   color: #678;
   font-size: 11px;
+}
+#lbn-status-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+#lbn-edit-date {
+  background: none;
+  border: 1px solid #2c3440;
+  color: #9ab;
+  font-size: 11px;
+  min-width: 72px;
+  height: 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  white-space: nowrap;
+}
+#lbn-edit-date:hover {
+  color: #fff;
+  border-color: #00e054;
+}
+#lbn-date-picker {
+  background: #0e1216;
+  color: #e5e9ee;
+  border: 1px solid #2c3440;
+  border-radius: 8px;
+  font-size: 11px;
+  padding: 4px 6px;
+  margin-left: 8px;
+  height: 28px;
+}
+#lbn-status-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  min-height: 28px;
+}
+#lbn-widget.edit-date-mode #lbn-status,
+#lbn-widget.edit-date-mode #lbn-edit-date,
+#lbn-widget.edit-date-mode #lbn-delete {
+  display: none;
+}
+#lbn-widget.edit-date-mode #lbn-status-row {
+  justify-content: flex-start;
+  gap: 8px;
+}
+#lbn-delete {
+  margin-left: 8px;
+}
+#lbn-date-picker {
+  background: #0e1216;
+  color: #e5e9ee;
+  border: 1px solid #2c3440;
+  border-radius: 8px;
+  font-size: 11px;
+  padding: 4px 6px;
+  margin-left: 4px;
+  height: 28px;
+  min-width: 120px;
+  max-width: 140px;
+  width: 140px;
+}
+#lbn-date-ok {
+  background: none;
+  border: 1px solid #2c3440;
+  color: #9ab;
+  font-size: 11px;
+  min-width: 40px;
+  height: 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+#lbn-date-ok:hover {
+  color: #fff;
+  border-color: #00e054;
+}
+#lbn-date-cancel {
+  background: none;
+  border: 1px solid #2c3440;
+  color: #ff8674;
+  font-size: 11px;
+  min-width: 52px;
+  height: 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 #lbn-delete {
   background: none;
@@ -117,8 +214,18 @@
   font-size: 11px;
   font-weight: 600;
   cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 6px;
+  min-width: 72px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+#lbn-date-cancel:hover {
+  color: #fff;
+  border-color: #ff8674;
+  background: rgba(255, 134, 116, 0.12);
 }
 #lbn-delete:hover {
   background: rgba(255, 134, 116, 0.12);

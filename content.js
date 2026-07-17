@@ -67,12 +67,10 @@
   function formatDate(ts) {
     if (!ts) return "";
     const d = new Date(ts);
-    return d.toLocaleString(undefined, {
+    return d.toLocaleDateString(undefined, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     });
   }
 
@@ -84,12 +82,16 @@
   async function loadNote(username, slug) {
     const key = noteKey(username, slug);
     const result = await browser.storage.local.get(key);
-    return result[key] || { text: "", updatedAt: null };
+    return result[key] || { text: "", updatedAt: null, title: null };
   }
 
-  async function saveNote(username, slug, text) {
+  async function saveNote(username, slug, text, title, updatedAt = null) {
     const key = noteKey(username, slug);
-    const value = { text, updatedAt: Date.now() };
+    const value = {
+      text,
+      title: title || "",
+      updatedAt: updatedAt !== null ? updatedAt : Date.now(),
+    };
     await browser.storage.local.set({ [key]: value });
     return value;
   }
@@ -122,7 +124,13 @@
         </div>
         <textarea id="lbn-textarea" placeholder="Write a private note about this film…" spellcheck="true"></textarea>
         <div id="lbn-footer">
-          <span id="lbn-status"></span>
+          <div id="lbn-status-row">
+            <span id="lbn-status"></span>
+            <button id="lbn-edit-date" type="button" title="Edit saved date">Edit date</button>
+            <input id="lbn-date-picker" type="datetime-local" hidden />
+            <button id="lbn-date-ok" type="button" hidden>OK</button>
+            <button id="lbn-date-cancel" type="button" hidden>Back</button>
+          </div>
           <button id="lbn-delete" type="button" title="Delete note">Delete</button>
         </div>
       </div>
@@ -154,6 +162,7 @@
     titleEl.textContent = `Notes — ${getFilmTitle()}`;
 
     const existing = await loadNote(myUsername, slug);
+    let currentNote = existing;
     textarea.value = existing.text;
     status.textContent = existing.updatedAt
       ? `Saved on ${formatDate(existing.updatedAt)}`
@@ -169,6 +178,10 @@
     }
     function close() {
       wrapper.classList.remove("lbn-open");
+      wrapper.classList.remove("edit-date-mode");
+      dateInput.hidden = true;
+      dateOkBtn.hidden = true;
+      dateCancelBtn.hidden = true;
       setCollapsed(true);
     }
 
@@ -179,12 +192,20 @@
 
     const debouncedSave = debounce(async (value) => {
       status.textContent = "Saving…";
-      const saved = await saveNote(myUsername, slug, value);
+      const saved = await saveNote(myUsername, slug, value, getFilmTitle());
+      currentNote = saved;
       status.textContent = `Saved on ${formatDate(saved.updatedAt)}`;
     }, 500);
 
     textarea.addEventListener("input", (e) => {
       debouncedSave(e.target.value);
+    });
+
+    textarea.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+      }
     });
 
     deleteBtn.addEventListener("click", async () => {
@@ -193,6 +214,83 @@
         await deleteNote(myUsername, slug);
         status.textContent = "Note deleted";
       }
+    });
+
+    const dateInput = wrapper.querySelector("#lbn-date-picker");
+    const editDateBtn = wrapper.querySelector("#lbn-edit-date");
+    const dateOkBtn = wrapper.querySelector("#lbn-date-ok");
+    const dateCancelBtn = wrapper.querySelector("#lbn-date-cancel");
+
+    function toLocalDatetimeInputValue(ts) {
+      const date = new Date(ts);
+      const pad = (value) => String(value).padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
+        date.getHours()
+      )}:${pad(date.getMinutes())}`;
+    }
+
+    function updateSavedDate(newDate) {
+      return saveNote(myUsername, slug, textarea.value, getFilmTitle(), newDate);
+    }
+
+    editDateBtn.addEventListener("click", () => {
+      const currentTimestamp = currentNote.updatedAt || Date.now();
+      const currentValue = toLocalDatetimeInputValue(currentTimestamp);
+      dateInput.value = currentValue;
+      dateInput.hidden = false;
+      dateOkBtn.hidden = false;
+      dateCancelBtn.hidden = false;
+      wrapper.classList.add("edit-date-mode");
+      dateInput.focus();
+    });
+
+    async function finishDateEdit(saved) {
+      currentNote = saved;
+      status.textContent = `Saved on ${formatDate(saved.updatedAt)}`;
+      dateInput.hidden = true;
+      dateOkBtn.hidden = true;
+      dateCancelBtn.hidden = true;
+      wrapper.classList.remove("edit-date-mode");
+      textarea.focus();
+    }
+
+    function cancelDateEdit() {
+      dateInput.hidden = true;
+      dateOkBtn.hidden = true;
+      dateCancelBtn.hidden = true;
+      wrapper.classList.remove("edit-date-mode");
+      textarea.focus();
+    }
+
+    dateOkBtn.addEventListener("click", async () => {
+      if (!dateInput.value) return;
+      const newTimestamp = new Date(dateInput.value).getTime();
+      if (Number.isNaN(newTimestamp)) return;
+      const saved = await updateSavedDate(newTimestamp);
+      await finishDateEdit(saved);
+    });
+
+    dateInput.addEventListener("keydown", async (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        cancelDateEdit();
+      }
+      if (e.key === "Enter") {
+        e.preventDefault();
+        if (!dateInput.value) return;
+        const newTimestamp = new Date(dateInput.value).getTime();
+        if (Number.isNaN(newTimestamp)) return;
+        const saved = await updateSavedDate(newTimestamp);
+        await finishDateEdit(saved);
+      }
+    });
+
+    dateCancelBtn.addEventListener("click", () => {
+      cancelDateEdit();
+    });
+
+    dateInput.addEventListener("change", () => {
+      // keep value, do not auto-save until OK is clicked
     });
 
     // If Letterboxd navigates in SPA mode (pjax) to another film without
@@ -214,6 +312,7 @@
         slug = parsed.slug;
         titleEl.textContent = `Notes — ${getFilmTitle()}`;
         const note = await loadNote(myUsername, slug);
+        currentNote = note;
         textarea.value = note.text;
         status.textContent = note.updatedAt
           ? `Saved on ${formatDate(note.updatedAt)}`
