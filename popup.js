@@ -42,6 +42,31 @@ function formatDate(ts) {
   });
 }
 
+function formatMonthYear(ts) {
+  if (!ts) return "Unknown date";
+  return new Date(ts).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+}
+
+function formatDay(ts) {
+  if (!ts) return "--";
+  return new Date(ts).toLocaleDateString(undefined, {
+    day: "2-digit",
+  });
+}
+
+function formatMonth(ts) {
+  if (!ts) return "";
+  return new Date(ts).toLocaleDateString(undefined, {
+    month: "short",
+  }).toUpperCase();
+}
+
+let currentSortOrder = "newest";
+let storedNotes = [];
+
 async function getAllNotes(username) {
   const prefix = noteKeyPrefix(username);
   const all = await browser.storage.local.get(null);
@@ -49,10 +74,18 @@ async function getAllNotes(username) {
     .filter(([key]) => key.startsWith(prefix))
     .map(([key, value]) => ({
       slug: key.slice(prefix.length),
+      title: value.title || null,
       text: value.text || "",
       updatedAt: value.updatedAt || 0,
-    }))
-    .sort((a, b) => b.updatedAt - a.updatedAt);
+    }));
+}
+
+function sortNotes(notes) {
+  return [...notes].sort((a, b) =>
+    currentSortOrder === "newest"
+      ? b.updatedAt - a.updatedAt
+      : a.updatedAt - b.updatedAt
+  );
 }
 
 function render(notes) {
@@ -65,29 +98,62 @@ function render(notes) {
   empty.hidden = notes.length !== 0;
   if (notes.length === 0) {
     empty.textContent = "No notes saved yet. Open a film page on Letterboxd and click Notes to create one.";
+    return;
   }
 
+  const groups = [];
+  let lastGroupKey = null;
   for (const note of notes) {
-    const li = document.createElement("li");
-    li.className = "lbn-item";
+    const groupKey = formatMonthYear(note.updatedAt);
+    if (groupKey !== lastGroupKey) {
+      groups.push({ key: groupKey, notes: [] });
+      lastGroupKey = groupKey;
+    }
+    groups[groups.length - 1].notes.push(note);
+  }
 
-    const title = document.createElement("div");
-    title.className = "lbn-item-title";
-    title.textContent = slugToTitle(note.slug);
+  for (const group of groups) {
+    const header = document.createElement("li");
+    header.className = "month-header";
+    header.textContent = group.key;
+    list.appendChild(header);
 
-    const snippet = document.createElement("div");
-    snippet.className = "lbn-item-snippet";
-    snippet.textContent = (note.text || "").slice(0, 80).replace(/\n/g, " ");
+    for (const note of group.notes) {
+      const li = document.createElement("li");
+      li.className = "diary-item";
 
-    const date = document.createElement("div");
-    date.className = "lbn-item-date";
-    date.textContent = formatDate(note.updatedAt);
+      const date = document.createElement("div");
+      date.className = "diary-date";
 
-    li.append(title, snippet, date);
-    li.addEventListener("click", () => {
-      browser.tabs.create({ url: slugToUrl(note.slug) });
-    });
-    list.appendChild(li);
+      const day = document.createElement("div");
+      day.className = "diary-day";
+      day.textContent = formatDay(note.updatedAt);
+
+      const month = document.createElement("div");
+      month.className = "diary-month";
+      month.textContent = formatMonth(note.updatedAt);
+
+      date.append(day, month);
+
+      const content = document.createElement("div");
+      content.className = "diary-content";
+
+      const title = document.createElement("div");
+      title.className = "diary-title";
+      title.textContent = note.title || slugToTitle(note.slug);
+
+      const snippet = document.createElement("div");
+      snippet.className = "diary-snippet";
+      snippet.textContent = (note.text || "").trim();
+
+      content.append(title, snippet);
+
+      li.append(date, content);
+      li.addEventListener("click", () => {
+        browser.tabs.create({ url: slugToUrl(note.slug) });
+      });
+      list.appendChild(li);
+    }
   }
 }
 
@@ -95,6 +161,7 @@ function renderLoggedOut() {
   document.getElementById("list").innerHTML = "";
   document.getElementById("count").textContent = "";
   document.getElementById("search").hidden = true;
+  document.getElementById("sortToggle").hidden = true;
   document.querySelector("footer").hidden = true;
   const empty = document.getElementById("empty");
   empty.hidden = false;
@@ -111,18 +178,30 @@ async function init() {
 
   document.getElementById("count").textContent = `Signed in as ${username}`;
 
-  const notes = await getAllNotes(username);
-  render(notes);
+  storedNotes = await getAllNotes(username);
+  render(sortNotes(storedNotes));
+
+  const sortToggle = document.getElementById("sortToggle");
+  sortToggle.addEventListener("click", () => {
+    currentSortOrder = currentSortOrder === "newest" ? "oldest" : "newest";
+    sortToggle.textContent = currentSortOrder === "newest" ? "↓" : "↑";
+    render(sortNotes(storedNotes));
+  });
 
   document.getElementById("search").addEventListener("input", (e) => {
     const q = e.target.value.trim().toLowerCase();
     if (!q) {
-      render(notes);
+      render(sortNotes(storedNotes));
       return;
     }
     render(
-      notes.filter(
-        (n) => n.slug.toLowerCase().includes(q) || n.text.toLowerCase().includes(q)
+      sortNotes(
+        storedNotes.filter(
+          (n) =>
+            n.slug.toLowerCase().includes(q) ||
+            (n.title && n.title.toLowerCase().includes(q)) ||
+            n.text.toLowerCase().includes(q)
+        )
       )
     );
   });
