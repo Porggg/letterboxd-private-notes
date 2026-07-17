@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Letterboxd Private Notes",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Add private notes stored locally on Letterboxd film pages.",
   "homepage_url": "https://github.com/Porggg/letterboxd-private-notes",
 
